@@ -6,6 +6,7 @@ import com.nhaarman.mockito_kotlin.verify
 
 import org.gradle.api.NamedDomainObjectContainer
 import org.gradle.api.PolymorphicDomainObjectContainer
+import org.gradle.api.Task
 import org.gradle.api.tasks.Delete
 import org.gradle.api.tasks.TaskContainer
 
@@ -13,8 +14,6 @@ import org.hamcrest.CoreMatchers.*
 import org.hamcrest.MatcherAssert.assertThat
 
 import org.junit.Test
-import kotlin.reflect.KClass
-import kotlin.reflect.KProperty
 
 class NamedDomainObjectContainerExtensionsTest {
 
@@ -120,7 +119,7 @@ class NamedDomainObjectContainerExtensionsTest {
         }
 
         @Suppress("unused_variable")
-        val domainObject by container.factory
+        val domainObject by container.new
 
         verify(container).create("domainObject")
     }
@@ -134,7 +133,7 @@ class NamedDomainObjectContainerExtensionsTest {
             on { getByName("domainObject") } doReturn element
         }
 
-        val domainObject by container.factory {
+        val domainObject by container.new {
             foo = "domain-foo"
             bar = true
         }
@@ -154,7 +153,7 @@ class NamedDomainObjectContainerExtensionsTest {
             on { getByName("domainObject") } doReturn element
         }
 
-        val domainObject by container.factory(type = DomainObjectBase.Foo::class) {
+        val domainObject by container.new(type = DomainObjectBase.Foo::class) {
             foo = "domain-foo"
         }
 
@@ -164,35 +163,17 @@ class NamedDomainObjectContainerExtensionsTest {
             equalTo("domain-foo"))
     }
 
-    val <T : Any> NamedDomainObjectContainer<T>.factory
-        get() = NamedDomainObjectContainerDelegateProvider(this, {})
+    @Test
+    fun `can create new element within configuration block via delegated property`() {
+        val tasks = mock<TaskContainer> {
+            on { create("hello") } doReturn mock<Task>()
+        }
 
-    fun <T : Any> NamedDomainObjectContainer<T>.factory(configuration: T.() -> Unit) =
-        NamedDomainObjectContainerDelegateProvider(this, configuration)
-
-    class NamedDomainObjectContainerDelegateProvider<T : Any>(
-        val container: NamedDomainObjectContainer<T>, val configuration: T.() -> Unit) {
-
-        operator fun provideDelegate(thisRef: Any?, property: KProperty<*>) =
-            container.apply {
-                create(property.name).apply(configuration)
-            }
-    }
-
-    inline fun <T : Any, reified U : T> PolymorphicDomainObjectContainer<T>.factory(type: KClass<U>, noinline configuration: U.() -> Unit) =
-        factory(type.java, configuration)
-
-    fun <T : Any, U : T> PolymorphicDomainObjectContainer<T>.factory(type: Class<U>, configuration: U.() -> Unit) =
-        PolymorphicDomainObjectContainerDelegateProvider(this, type, configuration)
-
-    class PolymorphicDomainObjectContainerDelegateProvider<T : Any, U : T>(
-        val container: PolymorphicDomainObjectContainer<T>, val type: Class<U>, val configuration: U.() -> Unit) {
-
-        @Suppress("unchecked_cast")
-        operator fun provideDelegate(thisRef: Any?, property: KProperty<*>) =
-            container.apply {
-                create(property.name, type).apply(configuration)
-            } as PolymorphicDomainObjectContainer<U>
+        tasks {
+            @Suppress("unused_variable")
+            val hello by new
+        }
+        verify(tasks).create("hello")
     }
 }
 

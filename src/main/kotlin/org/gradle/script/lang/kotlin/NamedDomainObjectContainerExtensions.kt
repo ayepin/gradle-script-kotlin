@@ -20,6 +20,7 @@ import org.gradle.api.NamedDomainObjectContainer
 import org.gradle.api.PolymorphicDomainObjectContainer
 
 import kotlin.reflect.KClass
+import kotlin.reflect.KProperty
 
 
 /**
@@ -37,7 +38,7 @@ inline operator fun <T : Any, C : NamedDomainObjectContainer<T>> C.invoke(
 
 
 class NamedDomainObjectContainerConfiguration<T : Any>(
-    private val container: NamedDomainObjectContainer<T>) {
+    private val container: NamedDomainObjectContainer<T>) : NamedDomainObjectContainer<T> by container {
 
     inline operator fun String.invoke(configuration: T.() -> Unit): T =
         this().apply(configuration)
@@ -60,3 +61,39 @@ class NamedDomainObjectContainerConfiguration<T : Any>(
             ?: throw IllegalArgumentException("Container '$container' is not polymorphic.")
 }
 
+
+val <T : Any> NamedDomainObjectContainer<T>.new
+    get() = NamedDomainObjectContainerDelegateProvider(this, {})
+
+
+fun <T : Any> NamedDomainObjectContainer<T>.new(configuration: T.() -> Unit) =
+    NamedDomainObjectContainerDelegateProvider(this, configuration)
+
+
+class NamedDomainObjectContainerDelegateProvider<T : Any>(
+    val container: NamedDomainObjectContainer<T>, val configuration: T.() -> Unit) {
+
+    operator fun provideDelegate(thisRef: Any?, property: KProperty<*>) =
+        container.apply {
+            create(property.name).apply(configuration)
+        }
+}
+
+
+inline fun <T : Any, reified U : T> PolymorphicDomainObjectContainer<T>.new(
+    type: KClass<U>, noinline configuration: U.() -> Unit) = new(type.java, configuration)
+
+
+fun <T : Any, U : T> PolymorphicDomainObjectContainer<T>.new(type: Class<U>, configuration: U.() -> Unit) =
+    PolymorphicDomainObjectContainerDelegateProvider(this, type, configuration)
+
+
+class PolymorphicDomainObjectContainerDelegateProvider<T : Any, U : T>(
+    val container: PolymorphicDomainObjectContainer<T>, val type: Class<U>, val configuration: U.() -> Unit) {
+
+    @Suppress("unchecked_cast")
+    operator fun provideDelegate(thisRef: Any?, property: KProperty<*>) =
+        container.apply {
+            create(property.name, type).apply(configuration)
+        } as PolymorphicDomainObjectContainer<U>
+}
