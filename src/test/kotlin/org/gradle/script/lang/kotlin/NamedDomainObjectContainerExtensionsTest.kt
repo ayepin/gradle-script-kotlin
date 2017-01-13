@@ -10,7 +10,8 @@ import org.gradle.api.Task
 import org.gradle.api.tasks.Delete
 import org.gradle.api.tasks.TaskContainer
 
-import org.hamcrest.CoreMatchers.*
+import org.hamcrest.CoreMatchers.equalTo
+import org.hamcrest.CoreMatchers.sameInstance
 import org.hamcrest.MatcherAssert.assertThat
 
 import org.junit.Test
@@ -112,7 +113,7 @@ class NamedDomainObjectContainerExtensionsTest {
     }
 
     @Test
-    fun `can create new element via delegated property in monomorphic container`() {
+    fun `can create element in monomorphic container via delegated property`() {
 
         val container = mock<NamedDomainObjectContainer<DomainObject>> {
             on { create("domainObject") } doReturn DomainObject()
@@ -125,7 +126,7 @@ class NamedDomainObjectContainerExtensionsTest {
     }
 
     @Test
-    fun `can create and configure new element via delegated property in monomorphic container`() {
+    fun `can create and configure element in monomorphic container via delegated property`() {
 
         val element = DomainObject()
         val container = mock<NamedDomainObjectContainer<DomainObject>> {
@@ -145,7 +146,7 @@ class NamedDomainObjectContainerExtensionsTest {
     }
 
     @Test
-    fun `can create new element via delegated property in polymorphic container`() {
+    fun `can create and configure element in polymorphic container via delegated property`() {
 
         val element = DomainObjectBase.Foo()
         val container = mock<PolymorphicDomainObjectContainer<DomainObjectBase>> {
@@ -164,7 +165,20 @@ class NamedDomainObjectContainerExtensionsTest {
     }
 
     @Test
-    fun `can create new element within configuration block via delegated property`() {
+    fun `can create element in polymorphic container via delegated property`() {
+
+        val container = mock<PolymorphicDomainObjectContainer<DomainObjectBase>> {
+            on { create("domainObject", DomainObjectBase.Foo::class.java) } doReturn DomainObjectBase.Foo()
+        }
+
+        @Suppress("unused_variable")
+        val domainObject by container.new(DomainObjectBase.Foo::class)
+
+        verify(container).create("domainObject", DomainObjectBase.Foo::class.java)
+    }
+
+    @Test
+    fun `can create element within configuration block via delegated property`() {
         val tasks = mock<TaskContainer> {
             on { create("hello") } doReturn mock<Task>()
         }
@@ -176,4 +190,3 @@ class NamedDomainObjectContainerExtensionsTest {
         verify(tasks).create("hello")
     }
 }
-

@@ -81,6 +81,10 @@ class NamedDomainObjectContainerDelegateProvider<T : Any>(
 
 
 inline fun <T : Any, reified U : T> PolymorphicDomainObjectContainer<T>.new(
+    type: KClass<U>) = new(type.java, {})
+
+
+inline fun <T : Any, reified U : T> PolymorphicDomainObjectContainer<T>.new(
     type: KClass<U>, noinline configuration: U.() -> Unit) = new(type.java, configuration)
 
 
