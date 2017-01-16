@@ -40,15 +40,27 @@ inline operator fun <T : Any, C : NamedDomainObjectContainer<T>> C.invoke(
 class NamedDomainObjectContainerConfiguration<T : Any>(
     private val container: NamedDomainObjectContainer<T>) : NamedDomainObjectContainer<T> by container {
 
+    /**
+     * @see NamedDomainObjectContainer.maybeCreate
+     */
     inline operator fun String.invoke(configuration: T.() -> Unit): T =
         this().apply(configuration)
 
+    /**
+     * @see NamedDomainObjectContainer.maybeCreate
+     */
     operator fun String.invoke(): T =
         container.maybeCreate(this)
 
+    /**
+     * @see PolymorphicDomainObjectContainer.maybeCreate
+     */
     inline operator fun <U : T> String.invoke(type: KClass<U>, configuration: U.() -> Unit): U =
         this(type).apply(configuration)
 
+    /**
+     * @see PolymorphicDomainObjectContainer.maybeCreate
+     */
     operator fun <U : T> String.invoke(type: KClass<U>): U =
         polymorphicDomainObjectContainer().maybeCreate(this, type.java)
 
@@ -62,10 +74,16 @@ class NamedDomainObjectContainerConfiguration<T : Any>(
 }
 
 
+/**
+ * Provides a property delegate that creates elements of the default collection type.
+ */
 val <T : Any> NamedDomainObjectContainer<T>.creating
     get() = NamedDomainObjectContainerDelegateProvider(this, {})
 
 
+/**
+ * Provides a property delegate that creates elements of the default collection type with the given [configuration].
+ */
 fun <T : Any> NamedDomainObjectContainer<T>.creating(configuration: T.() -> Unit) =
     NamedDomainObjectContainerDelegateProvider(this, configuration)
 
@@ -80,14 +98,24 @@ class NamedDomainObjectContainerDelegateProvider<T : Any>(
 }
 
 
+/**
+ * Provides a property delegate that creates elements of the given [type].
+ */
 inline fun <T : Any, reified U : T> PolymorphicDomainObjectContainer<T>.creating(
     type: KClass<U>) = creating(type.java, {})
 
 
+/**
+ * Provides a property delegate that creates elements of the given [type] with the given [configuration].
+ */
 inline fun <T : Any, reified U : T> PolymorphicDomainObjectContainer<T>.creating(
     type: KClass<U>, noinline configuration: U.() -> Unit) = creating(type.java, configuration)
 
 
+/**
+ * Provides a property delegate that creates elements of the given [type] expressed as a [java.lang.Class]
+ * with the given [configuration].
+ */
 fun <T : Any, U : T> PolymorphicDomainObjectContainer<T>.creating(type: Class<U>, configuration: U.() -> Unit) =
     PolymorphicDomainObjectContainerDelegateProvider(this, type, configuration)
 
