@@ -189,4 +189,42 @@ class NamedDomainObjectContainerExtensionsTest {
         }
         verify(tasks).create("hello")
     }
+
+    @Test
+    fun `can create element of specific type within configuration block via delegated property`() {
+
+        val container = mock<PolymorphicDomainObjectContainer<DomainObjectBase>> {
+            on { create("domainObject", DomainObjectBase.Foo::class.java) } doReturn DomainObjectBase.Foo()
+        }
+
+        container {
+
+            @Suppress("unused_variable")
+            val domainObject by creating(type = DomainObjectBase.Foo::class)
+        }
+
+        verify(container).create("domainObject", DomainObjectBase.Foo::class.java)
+    }
+
+    @Test
+    fun `can create and configure element of specific type within configuration block via delegated property`() {
+
+        val element = DomainObjectBase.Foo()
+        val container = mock<PolymorphicDomainObjectContainer<DomainObjectBase>> {
+            on { create("domainObject", DomainObjectBase.Foo::class.java) } doReturn element
+        }
+
+        container {
+
+            @Suppress("unused_variable")
+            val domainObject by creating(DomainObjectBase.Foo::class) {
+                foo = "domain-foo"
+            }
+        }
+
+        verify(container).create("domainObject", DomainObjectBase.Foo::class.java)
+        assertThat(
+            element.foo,
+            equalTo("domain-foo"))
+    }
 }

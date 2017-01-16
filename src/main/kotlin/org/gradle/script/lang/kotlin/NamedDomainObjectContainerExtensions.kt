@@ -64,6 +64,18 @@ class NamedDomainObjectContainerConfiguration<T : Any>(
     operator fun <U : T> String.invoke(type: KClass<U>): U =
         polymorphicDomainObjectContainer().maybeCreate(this, type.java)
 
+    /**
+     * Provides a property delegate that creates elements of the given [type].
+     */
+    fun <U : T> creating(type: KClass<U>) =
+        polymorphicDomainObjectContainer().creating(type)
+
+    /**
+     * Provides a property delegate that creates elements of the given [type] with the given [configuration].
+     */
+    fun <U : T> creating(type: KClass<U>, configuration: U.() -> Unit) =
+        polymorphicDomainObjectContainer().creating(type, configuration)
+
     private fun polymorphicDomainObjectContainer() =
         // We must rely on the dynamic cast and possible runtime failure here
         // due to a Kotlin extension member limitation.
@@ -101,15 +113,15 @@ class NamedDomainObjectContainerDelegateProvider<T : Any>(
 /**
  * Provides a property delegate that creates elements of the given [type].
  */
-inline fun <T : Any, reified U : T> PolymorphicDomainObjectContainer<T>.creating(
+fun <T : Any, U : T> PolymorphicDomainObjectContainer<T>.creating(
     type: KClass<U>) = creating(type.java, {})
 
 
 /**
  * Provides a property delegate that creates elements of the given [type] with the given [configuration].
  */
-inline fun <T : Any, reified U : T> PolymorphicDomainObjectContainer<T>.creating(
-    type: KClass<U>, noinline configuration: U.() -> Unit) = creating(type.java, configuration)
+fun <T : Any, U : T> PolymorphicDomainObjectContainer<T>.creating(
+    type: KClass<U>, configuration: U.() -> Unit) = creating(type.java, configuration)
 
 
 /**
