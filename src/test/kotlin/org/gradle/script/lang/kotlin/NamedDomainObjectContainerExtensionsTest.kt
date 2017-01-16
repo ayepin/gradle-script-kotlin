@@ -120,7 +120,7 @@ class NamedDomainObjectContainerExtensionsTest {
         }
 
         @Suppress("unused_variable")
-        val domainObject by container.new
+        val domainObject by container.creating
 
         verify(container).create("domainObject")
     }
@@ -134,7 +134,7 @@ class NamedDomainObjectContainerExtensionsTest {
             on { getByName("domainObject") } doReturn element
         }
 
-        val domainObject by container.new {
+        val domainObject by container.creating {
             foo = "domain-foo"
             bar = true
         }
@@ -154,7 +154,7 @@ class NamedDomainObjectContainerExtensionsTest {
             on { getByName("domainObject") } doReturn element
         }
 
-        val domainObject by container.new(type = DomainObjectBase.Foo::class) {
+        val domainObject by container.creating(type = DomainObjectBase.Foo::class) {
             foo = "domain-foo"
         }
 
@@ -172,7 +172,7 @@ class NamedDomainObjectContainerExtensionsTest {
         }
 
         @Suppress("unused_variable")
-        val domainObject by container.new(DomainObjectBase.Foo::class)
+        val domainObject by container.creating(DomainObjectBase.Foo::class)
 
         verify(container).create("domainObject", DomainObjectBase.Foo::class.java)
     }
@@ -185,7 +185,7 @@ class NamedDomainObjectContainerExtensionsTest {
 
         tasks {
             @Suppress("unused_variable")
-            val hello by new
+            val hello by creating
         }
         verify(tasks).create("hello")
     }

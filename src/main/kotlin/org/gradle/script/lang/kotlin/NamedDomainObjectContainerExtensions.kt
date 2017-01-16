@@ -62,11 +62,11 @@ class NamedDomainObjectContainerConfiguration<T : Any>(
 }
 
 
-val <T : Any> NamedDomainObjectContainer<T>.new
+val <T : Any> NamedDomainObjectContainer<T>.creating
     get() = NamedDomainObjectContainerDelegateProvider(this, {})
 
 
-fun <T : Any> NamedDomainObjectContainer<T>.new(configuration: T.() -> Unit) =
+fun <T : Any> NamedDomainObjectContainer<T>.creating(configuration: T.() -> Unit) =
     NamedDomainObjectContainerDelegateProvider(this, configuration)
 
 
@@ -80,15 +80,15 @@ class NamedDomainObjectContainerDelegateProvider<T : Any>(
 }
 
 
-inline fun <T : Any, reified U : T> PolymorphicDomainObjectContainer<T>.new(
-    type: KClass<U>) = new(type.java, {})
+inline fun <T : Any, reified U : T> PolymorphicDomainObjectContainer<T>.creating(
+    type: KClass<U>) = creating(type.java, {})
 
 
-inline fun <T : Any, reified U : T> PolymorphicDomainObjectContainer<T>.new(
-    type: KClass<U>, noinline configuration: U.() -> Unit) = new(type.java, configuration)
+inline fun <T : Any, reified U : T> PolymorphicDomainObjectContainer<T>.creating(
+    type: KClass<U>, noinline configuration: U.() -> Unit) = creating(type.java, configuration)
 
 
-fun <T : Any, U : T> PolymorphicDomainObjectContainer<T>.new(type: Class<U>, configuration: U.() -> Unit) =
+fun <T : Any, U : T> PolymorphicDomainObjectContainer<T>.creating(type: Class<U>, configuration: U.() -> Unit) =
     PolymorphicDomainObjectContainerDelegateProvider(this, type, configuration)
 
 

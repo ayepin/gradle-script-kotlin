@@ -1,7 +1,7 @@
 
 tasks {
 
-    val hello by new { // refactor friendly task definition
+    val hello by creating { // refactor friendly task definition
         doLast { println("Hello!") }
     }
 
