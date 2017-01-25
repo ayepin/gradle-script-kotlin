@@ -16,6 +16,8 @@
 
 package org.gradle.script.lang.kotlin.buildsrc
 
+import groovy.json.JsonSlurper
+
 import org.gradle.api.DefaultTask
 import org.gradle.api.internal.project.ProjectInternal
 import org.gradle.api.tasks.InputFile
@@ -23,6 +25,8 @@ import org.gradle.api.tasks.OutputDirectory
 import org.gradle.api.tasks.TaskAction
 
 import org.gradle.initialization.buildsrc.BuildSrcProjectConfigurationAction
+
+import org.gradle.language.base.plugins.LifecycleBasePlugin.BUILD_TASK_NAME
 
 import org.gradle.script.lang.kotlin.*
 
@@ -44,15 +48,20 @@ class ProjectExtensionsBuildSrcConfigurationAction : BuildSrcProjectConfiguratio
         with (project) {
             val projectSchema = file(PROJECT_SCHEMA_RESOURCE_PATH)
             if (projectSchema.exists()) {
-                tasks {
-                    val gskProcessBuildSrcResources by creating(ProcessBuildSrcResources::class) {
-                        inputSchema = projectSchema
-                        destinationDir = File(buildDir, "generated-src/gradle-script-kotlin")
-                    }
-                    "build" {
-                        dependsOn(gskProcessBuildSrcResources)
-                    }
-                }
+                configureCodeGenerationFor(projectSchema)
+            }
+        }
+    }
+
+    private fun ProjectInternal.configureCodeGenerationFor(projectSchema: File) {
+        pluginManager.apply("base")
+        tasks {
+            val gskProcessBuildSrcResources by creating(ProcessBuildSrcResources::class) {
+                inputSchema = projectSchema
+                destinationDir = File(buildDir, "generated-src/gradle-script-kotlin")
+            }
+            BUILD_TASK_NAME {
+                dependsOn(gskProcessBuildSrcResources)
             }
         }
     }
@@ -68,6 +77,26 @@ open class ProcessBuildSrcResources : DefaultTask() {
 
     @TaskAction
     fun act() {
-        println("Compiling ${project.relativeProjectPath(inputSchema!!.path)} into ${project.relativeProjectPath(destinationDir!!.path)}")
+        loadProjectSchema().forEach { projectPath, projectSchema ->
+            destinationFileFor(projectPath)
+                .writeText(codeForAccessorsOf(projectSchema))
+        }
     }
+
+    @Suppress("unchecked_cast")
+    private fun loadProjectSchema() =
+        JsonSlurper().parse(inputSchema!!) as Map<String, Map<String, String>>
+
+    private fun codeForAccessorsOf(schema: Map<String, String>) =
+        """ // Kotlin code goes here
+        """.replaceIndent()
+
+    private fun destinationFileFor(projectPath: String) =
+        File(destinationDirFor(projectPath), "ProjectExtensions.kt")
+
+    private fun destinationDirFor(projectPath: String) =
+        projectPath
+            .split(":")
+            .filter(String::isNotBlank)
+            .fold(destinationDir!!, ::File)
 }
